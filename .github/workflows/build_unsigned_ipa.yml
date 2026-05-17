@@ -1,36 +1,38 @@
-name: Build Unsigned IPA (weight_tracker-unsigned)
+name: Build Unsigned IPA
 
 on:
-  push:
-    branches: [main]
   workflow_dispatch:
+  push:
+    branches: [master, main]
 
 jobs:
-  build:
+  build_ios:
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: subosito/flutter-action@v2
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.32.3'
-          channel: 'stable'
+          channel: stable
 
-      - name: Install dependencies
+      - name: Get dependencies
         run: flutter pub get
 
-      - name: Build iOS
+      - name: Build unsigned IPA
         run: flutter build ios --release --no-codesign
 
-      - name: Create IPA
+      - name: Package IPA
         run: |
+          mkdir -p output
+          cd build/ios/iphoneos
           mkdir -p Payload
-          cp -r build/ios/Release-iphoneos/Runner.app Payload/
-          zip -r weight_tracker-unsigned.ipa Payload
-          rm -rf Payload
+          cp -r Runner.app Payload/
+          zip -qr ../../../output/weight_tracker-unsigned.ipa Payload/
+          cd ../../..
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
-          name: weight_tracker-unsigned
-          path: weight_tracker-unsigned.ipa
+          name: weight_tracker-unsigned-ipa
+          path: output/weight_tracker-unsigned.ipa
